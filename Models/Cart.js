@@ -8,12 +8,23 @@ const CartSchema = mongoose.Schema({
         type: String,
     },
     quantity: {
-        type: String,
+        type: Number,
+    },
+    price: {
+        type: Number,
     },
     orderStatus:  { 
         type: Boolean,
         default:false
-        }
+        },
+    paymentStatus:{
+        type: Boolean,
+        default:false,
+    },
+    date : {
+        type:Date,
+        default:new Date(),
+    }
   })
 
   module.exports = mongoose.model('CartDetails', CartSchema);

@@ -33,6 +33,9 @@ app.use('/category', CategoryRoute);
 const SubCategoryRoute = require('./Routers/SubCategoryRouter');
 app.use('/subcategory', SubCategoryRoute);
 
+const CartRoute = require('./Routers/CartRoute');
+app.use('/cart', CartRoute);
+
 const UserRoute = require('./Routers/UserRoute');
 app.use('/user', UserRoute);
 

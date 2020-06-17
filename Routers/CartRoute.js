@@ -1,10 +1,14 @@
 const router = require('express').Router()
 
-const CategoryService = require('../Services/CategoryService')
+const CartService = require('../Services/CartService')
 
-router.post("/",CategoryService.addCategory)
-router.get("/:id",CategoryService.getCategoryById)
-router.get("/",CategoryService.getAllCategory)
-router.put("/:categoryId/:subcategoryId",CategoryService.addSubCategoryToCategory)
+router.post("/",CartService.addProductToCart)
+router.get("/:userId",CartService.getProductsFromCart)
+router.put("/:userId",CartService.orderCart)
+
+
+router.get("/orders/forall",CartService.getProductsFromOrders)
+router.get("/orders/:userId",CartService.getProductsFromOrdersById)
+
 
 module.exports = router;
