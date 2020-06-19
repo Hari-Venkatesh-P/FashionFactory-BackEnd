@@ -86,7 +86,6 @@ async function addSubCategory(req,res){
                     message: 'SubCategory Already Exists'
                 })
             }else{
-
                 const newsubCategory = new SubCategory({
                     name : req.body.name
                 })

@@ -141,17 +141,17 @@ async function getProductsFromCart(req,res){
 }
 
 
-async function orderCart(req,res){
-    const{userId}=req.params
+async function orderItemsFromCart(req,res){
+    const{userId,productId,paymentStatus}=req.body
     try{
-        if(typeof userId == 'undefined'){
+        if(typeof userId == 'undefined' || typeof productId == 'undefined'){
             logger.error('Bad Request')
             res.status(400).send({
               success: false,
               message: 'Bad Request'
             })
         }else{
-            await Cart.updateMany({userid:userId},{ $set: { orderStatus: true } } ,async (err,docs)=>{
+            await Cart.updateMany({userid:userId,productid:productId},{ $set: { orderStatus: true,date:new Date(),paymentStatus } } ,async (err,docs)=>{
                 if(err){
                     logger.error('DB Error')
                     res.status(502).send({
@@ -275,7 +275,7 @@ async function getProductsFromOrders(req,res){
 module.exports = {
     addProductToCart,
     getProductsFromCart,
-    orderCart,
+    orderItemsFromCart,
     getProductsFromOrdersById,
     getProductsFromOrders,
 }

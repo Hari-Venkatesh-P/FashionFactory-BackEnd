@@ -4,7 +4,7 @@ const CartService = require('../Services/CartService')
 
 router.post("/",CartService.addProductToCart)
 router.get("/:userId",CartService.getProductsFromCart)
-router.put("/:userId",CartService.orderCart)
+router.put("/",CartService.orderItemsFromCart)
 
 
 router.get("/orders/forall",CartService.getProductsFromOrders)

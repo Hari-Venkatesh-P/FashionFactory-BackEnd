@@ -6,6 +6,7 @@ const crypto = require('crypto')
 const path = require('path')
 const AWS = require('aws-sdk');
 const multer  = require('multer')
+const mongoose = require('mongoose')
 
 const logger = require('../Library/logger')
 
@@ -29,31 +30,35 @@ const awsDownloadParams = {
 };
 
 var storage = multer.memoryStorage()
-var productMulter = multer({storage: storage}).single('productImage');
 
 
-function uploadProductPictureToAws(req, res){
-    const hashBody = {
-        file : req.file,
-        body : req.body 
-    }
-    logger.info("At Do Upload Function")
-    //logger.info(hashBody)
-    logger.info("Image Name at AWS")
-    //logger.info(crypto.createHash('sha1').update(JSON.stringify(hashBody)).digest('hex'))
-	awsUploadParams.Key = crypto.createHash('sha1').update(JSON.stringify(hashBody)).digest('hex')+".png";
-	awsUploadParams.Body = req.file.buffer;
-    try{
-        s3Client.upload(awsUploadParams, (err, data) => {
-            if (!err) {
-                logger.info('Product Image uploaded successfully !!'+ req.file.originalname)
+var productMulter = multer({storage: storage}).array('productImage',2);
+
+
+    function uploadProductPictureToAws(req, res){
+    var i
+    for(i=0;i<req.files.length;i++){
+            logger.info("At Do Upload Function")
+            //var file = req.files[i]
+            //console.log(file)
+            const hashBody = {
+                file : req.files[i],
+                body : req.body 
             }
-        });
-    }catch(error){
-        logger.info('Error in Uploading the file ' +error)
+            logger.info("Image Name at AWS")
+            awsUploadParams.Key = crypto.createHash('sha1').update(JSON.stringify(hashBody)).digest('hex')+".png";
+	        awsUploadParams.Body = req.files[i].buffer;
+            try{
+                s3Client.upload(awsUploadParams, (err, data) => {
+                if (!err) {
+                    logger.info('Product Image uploaded successfully !!')
+                }
+                });
+            }catch(error){
+                logger.info('Error in Uploading the file ' +error)
+            }
+        }
     }
-	
-}
 
 
 async function addProduct(req,res){
@@ -101,16 +106,23 @@ async function addProduct(req,res){
                                     message: 'Product already found in specified category under the subcategory'
                                   })
                             }else{
+                                console.log(req.files)
+                                console.log(req.file)
                                 uploadProductPictureToAws(req,res)
-                                const hashBody = {
-                                    file : req.file,
+                                const hashBody1 = {
+                                    file : req.files[0],
+                                    body : req.body
+                                }
+                                const hashBody2 = {
+                                    file : req.files[1],
                                     body : req.body
                                 }
                                 newProduct = new Product({
                                 name : req.body.name,
                                 description:req.body.description,
                                 price : req.body.price,
-                                imageId: crypto.createHash('sha1').update(JSON.stringify(hashBody)).digest('hex'),
+                                imageId: crypto.createHash('sha1').update(JSON.stringify(hashBody1)).digest('hex'),
+                                imageId1: crypto.createHash('sha1').update(JSON.stringify(hashBody2)).digest('hex'),
                                 availableQuantity: req.body.availableQuantity,
                                 categoryId: categorydocs._id,
                                 subcategoryId : subcategorydocs._id,
@@ -149,18 +161,37 @@ async function addProduct(req,res){
 
 async function getProductById (req, res) {
     try {
-        await Product.findOne({_id:req.params.id},async (err,productdocs)=>{
+        var id = mongoose.Types.ObjectId(req.params.id );
+        console.log(req.params.id)
+        await Product.aggregate([
+            { $match: { _id:id } },
+            { $addFields: { id: { $toObjectId: '$categoryId' } } },
+            { $addFields: { categoryId: { $toObjectId: '$categoryId' } } },
+            { $addFields: { subcategoryId: { $toObjectId: '$subcategoryId' } } },
+            {
+              $lookup: {
+                from: 'categorydetails',
+                localField: 'categoryId',
+                foreignField: '_id',
+                as: 'category'
+              }
+            },
+            { $unwind: '$category' },
+            {
+                $lookup: {
+                  from: 'subcategorydetails',
+                  localField: 'subcategoryId',
+                  foreignField: '_id',
+                  as: 'subcategory'
+                }
+              },
+              { $unwind: '$subcategory' }
+          ]).exec((err,productdocs)=>{
             if(err){
                 logger.error(err)
                 res.status(502).send({
                     success: false,
                     message: 'DB Error'
-                })
-            }else if(productdocs===null){
-                logger.warn("No Product found")
-                res.status(403).send({
-                    success: false,
-                    message: 'No Product found'
                 })
             }else{
                 logger.info('Product fetched successfulyy')
@@ -169,7 +200,7 @@ async function getProductById (req, res) {
                     message: productdocs
                 })
             }
-        })
+          })
     }catch (error) {
       logger.error(error)
       res.status(500).send({
@@ -189,12 +220,6 @@ async function getProductById (req, res) {
                 res.status(502).send({
                     success: false,
                     message: 'DB Error'
-                })
-            }else if(allproductdocs.length===0){
-                logger.warn("No Product found")
-                res.status(403).send({
-                    success: false,
-                    message: 'No Product found'
                 })
             }else{
                 logger.info('All Products fetched successfulyy')
@@ -257,7 +282,7 @@ async function getProductById (req, res) {
                 })
             }else if(docs===null){
                 logger.warn('No such Product to be Updated')
-                res.status(402).send({
+                res.status(201).send({
                     success: false,
                     message: 'No such Product to be Updated'
                 })
@@ -278,11 +303,44 @@ async function getProductById (req, res) {
     }
   }
 
+  async function getDefaultProducts(req,res){
+      try {
+        await Product.find({}).sort({createddate: 'descending'}).limit(10).exec(function(err, docs) { 
+            if(err){
+                logger.error(err)
+                res.status(502).send({
+                    success: false,
+                    message: 'DB Error'
+                })
+            }else if(docs.length===0){
+                logger.warn('No products found')
+                res.status(201).send({
+                    success: false,
+                    message: 'No products found'
+                })
+            }else{
+                logger.info('Successfully retreived the latest products')
+                res.status(200).send({
+                    success: true,
+                    message: docs
+                })
+            }
+         })
+      } catch (error) {
+        logger.error(error)
+            res.status(500).send({
+                    success: false,
+                    message: error
+            })
+      }
+  }
+
 module.exports = {
     addProduct,
     productMulter,
     deleteProduct,
     updateProduct,
     getProductById,
-    getFilteredProducts
+    getFilteredProducts,
+    getDefaultProducts
 }

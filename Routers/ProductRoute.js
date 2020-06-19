@@ -7,6 +7,7 @@ router.get("/:categoryId/:subcategoryId",ProductService.getFilteredProducts)
 router.get("/:id",ProductService.getProductById)
 router.delete("/:id",ProductService.deleteProduct)
 router.put("/:id",ProductService.updateProduct)
+router.get("/new",ProductService.getDefaultProducts)
 
  
 module.exports = router;

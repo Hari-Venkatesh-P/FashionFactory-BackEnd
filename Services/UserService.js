@@ -2,11 +2,11 @@ const User  = require('../Models/User')
 
 const logger = require('../Library/logger')
 
-
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 async function addUser(req,res){
     await User.findOne( {mobile:req.body.mobile}, async function (err,usermobiledocs){
-        console.log(usermobiledocs)
     if(err){
         logger.error(err)
         res.status(502).send({
@@ -39,7 +39,7 @@ async function addUser(req,res){
                     email:req.body.email,
                     address:req.body.address,
                     mobile:parseInt(req.body.mobile),
-                    password:req.body.name,
+                    password:req.body.password,
                 })
                 newUser.save((err,docs)=>{
                     if(err){
@@ -126,9 +126,77 @@ async function getAllUsers (req, res) {
     }
   }
 
+async function loginUser(req,res)
+{
+    try{
+        await User.findOne({email:req.body.email}, (findError, docs) => {
+            if (!docs) {
+                logger.warn("Email Id does not exists")
+                res.status(403).json({
+                    success: false,
+                    message: 'Email Id does not exists'
+                })
+            }else if(findError){
+                logger.error(err)
+                res.status(502).send({
+                    success: false,
+                    message: 'DB Error'
+                })
+            }else {
+                bcrypt.compare(req.body.password, docs.password, function (err, result) {
+                    if(err){
+                        logger.warn('Error during Password Comparion')
+                        res.status(403).send({
+                            success: false,
+                            message: 'Error during Password Comparion'
+                        })
+                    }else if(result==true){
+                        jwt.sign({docs}, 'secretkey', (err, token) => {
+                            if(err){
+                                logger.warn('Error during Token  Generation')
+                                res.status(403).send({
+                                    success: false,
+                                    message: 'Error during Token  Genration'
+                                })
+                            }else{
+                                logger.info('User Loggen in successfully')
+                                res.status(200).json({
+                                    success:true,
+                                    id:docs._id,
+                                    message: "Logged in as "+docs.name+".",
+                                    role:docs.role,
+                                    jwttoken : token
+                                });
+                            }
+                        });
+                     }else if(result==false){
+                        logger.warn('Password Mismatch')
+                            res.status(403).json({
+                                success:false,
+                                message: "Password Mismatch",
+                            });
+                     }else{
+                        logger.warn('Invalid Credentials')
+                            res.status(403).json({
+                                success:false,
+                                message: "Invalid Credentials",
+                            });
+                     }   
+                    });
+                }
+            })
+    }catch(error){
+        res.status(500).json({
+            success: false,
+            message: 'Server Problem'
+        })
+    }
+}
+
 
 module.exports = {
     addUser,
     getAllUsers,
     getUserById,
+    loginUser,
 }

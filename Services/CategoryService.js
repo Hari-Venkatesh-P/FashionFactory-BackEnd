@@ -16,7 +16,7 @@ async function addCategory(req,res){
                 })
             }else if(categorydocs!==null){
                 logger.warn('Category already exists')
-                res.status(403).send({
+                res.status(201).send({
                     success: false,
                     message: 'Category already exists'
                   })
@@ -61,7 +61,7 @@ async function getCategoryById(req,res){
                 })
             }else if(categorydocs===null){
                 logger.warn("No Category found")
-                res.status(403).send({
+                res.status(201).send({
                     success: false,
                     message: 'No Category found'
                 })
@@ -94,7 +94,7 @@ async function getAllCategory(req,res){
                 })
             }else if(allcategorydocs.length==0){
                 logger.warn("No Categories found")
-                res.status(403).send({
+                res.status(201).send({
                     success: false,
                     message: 'No Categories found'
                 })
@@ -118,7 +118,7 @@ async function getAllCategory(req,res){
 
 async function addSubCategoryToCategory(req,res){
     try{
-        await Category.findOne({_id:req.params.categoryId},async (err,categorydocs)=>{
+        await Category.findOne({_id:req.params.categoryId,'subcategory._id':{ $ne:req.params.subcategoryId}},async (err,categorydocs)=>{
             if(err){
                 logger.error(err)
                 res.status(502).send({
@@ -127,9 +127,9 @@ async function addSubCategoryToCategory(req,res){
                 })
             }else if(categorydocs===null){
                 logger.warn("No Category found")
-                res.status(403).send({
+                res.status(201).send({
                     success: false,
-                    message: 'No Category found'
+                    message: 'Sub Category Already Exists'
                 })
             }else{
                 console.log(req.params.subcategoryId)

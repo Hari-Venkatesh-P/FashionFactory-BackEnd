@@ -14,6 +14,10 @@ const ProductSchema = mongoose.Schema({
         type: String,
         default:""
     },
+    imageId1: {
+        type: String,
+        default:""
+    },
     availableQuantity: {
         type: Number,
     },
@@ -22,6 +26,10 @@ const ProductSchema = mongoose.Schema({
     },
     subcategoryId: {
         type: String,
+    },
+    createddate : {
+        type : Date,
+        default : new Date(),
     }
 
   })
