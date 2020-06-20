@@ -15,7 +15,7 @@ var dbdetails = configuration.dbdetails;
 app.use(bodyparser.json())
 app.use(bodyparser.urlencoded({ extended: true }));
 
-const PORT =  4000;
+const PORT =  process.env.PORT || 4000;
 
 // const URL = 'mongodb://127.0.0.1:27017/shopping'; local db
 
@@ -29,6 +29,12 @@ mongoose.connect(URL, {useNewUrlParser : true},(err) => {
         console.log('Connected to Mongo DB')
     }
 })
+
+
+app.get('/',function(req,res){
+    res.send("Welcome to Fashion Factory services")
+})
+
 
 const ProductRoute = require('./Routers/ProductRoute');
 app.use('/product', ProductRoute);
