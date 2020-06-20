@@ -49,7 +49,7 @@ async function getAllSubCategory(req,res){
                 })
             }else if(allsubcategorydocs.length==0){
                 logger.warn("No SubCategories found")
-                res.status(403).send({
+                res.status(201).send({
                     success: false,
                     message: 'No SubCategories found'
                 })
@@ -81,7 +81,7 @@ async function addSubCategory(req,res){
                 })
             }else if(subcategorydocs!==null){
                 logger.warn("SubCategory Already Exists")
-                res.status(403).send({
+                res.status(201).send({
                     success: false,
                     message: 'SubCategory Already Exists'
                 })

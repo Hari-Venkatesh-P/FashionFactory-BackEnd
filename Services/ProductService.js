@@ -52,14 +52,30 @@ var productMulter = multer({storage: storage}).array('productImage',2);
                 s3Client.upload(awsUploadParams, (err, data) => {
                 if (!err) {
                     logger.info('Product Image uploaded successfully !!')
+                }else{
+                    logger.warn(err)
+                    logger.warn('Unable to save product image at AWS !!')
                 }
                 });
             }catch(error){
-                logger.info('Error in Uploading the file ' +error)
+                logger.error('Error in Uploading the file ' +error)
             }
         }
     }
 
+    function productImageDownload(req, res){
+
+        awsDownloadParams.Key = req.params.file;
+	s3Client.getObject(awsDownloadParams)
+	  .createReadStream()
+		.on('error', function(err){
+            if(err){
+                logger.warn('Error in Downloading the product image ' +err)
+            }else{
+                logger.info('Product image downloaded successfuly')
+            }
+	  }).pipe(res);
+    }
 
 async function addProduct(req,res){
     try{
@@ -214,7 +230,7 @@ async function getProductById (req, res) {
    async function getFilteredProducts(req, res) {
     try {
         const{categoryId,subcategoryId} = req.params
-        await Product.find({categoryId,subcategoryId},async (err,allproductdocs)=>{
+        await Product.find({categoryId,subcategoryId}).sort({createddate: -1}).exec(async (err,allproductdocs)=>{
             if(err){
                 logger.error(err)
                 res.status(502).send({
@@ -273,6 +289,7 @@ async function getProductById (req, res) {
 
   async function updateProduct (req, res) {
     try {
+        console.log(req.body)
         await Product.findByIdAndUpdate(req.params.id,{ $set: { name: req.body.name , description: req.body.description, price: req.body.price, availableQuantity: req.body.availableQuantity, categoryId: req.body.categoryId, subcategoryId: req.body.subcategoryId  } },async (err,docs)=>{
             if(err){
                 logger.error(err)
@@ -305,18 +322,12 @@ async function getProductById (req, res) {
 
   async function getDefaultProducts(req,res){
       try {
-        await Product.find({}).sort({createddate: 'descending'}).limit(10).exec(function(err, docs) { 
+        await Product.find({}).sort({createddate: -1}).limit(7).exec(function(err, docs) { 
             if(err){
                 logger.error(err)
                 res.status(502).send({
                     success: false,
                     message: 'DB Error'
-                })
-            }else if(docs.length===0){
-                logger.warn('No products found')
-                res.status(201).send({
-                    success: false,
-                    message: 'No products found'
                 })
             }else{
                 logger.info('Successfully retreived the latest products')
@@ -342,5 +353,6 @@ module.exports = {
     updateProduct,
     getProductById,
     getFilteredProducts,
-    getDefaultProducts
+    getDefaultProducts,
+    productImageDownload
 }

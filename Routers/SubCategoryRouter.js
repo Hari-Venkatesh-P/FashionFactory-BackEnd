@@ -1,9 +1,10 @@
 const router = require('express').Router()
+const MiddlewareService = require('../Middleware/Tokencheck')
 
 const SubCategoryService = require('../Services/SubCategoryService')
 
-router.post("/",SubCategoryService.addSubCategory)
-router.get("/:id",SubCategoryService.getSubCategoryById)
-router.get("/",SubCategoryService.getAllSubCategory)
+router.post("/",MiddlewareService.isTokenPresent,SubCategoryService.addSubCategory)
+router.get("/:id",MiddlewareService.isTokenPresent,SubCategoryService.getSubCategoryById)
+router.get("/",MiddlewareService.isTokenPresent,SubCategoryService.getAllSubCategory)
 
 module.exports = router;

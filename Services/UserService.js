@@ -15,7 +15,7 @@ async function addUser(req,res){
         })
     }else if(usermobiledocs!==null){
         logger.error('Mobile Phone already exists')
-        res.status(502).send({
+        res.status(201).send({
             success: false,
             message: 'Mobile Phone already exists'
         })
@@ -132,7 +132,7 @@ async function loginUser(req,res)
         await User.findOne({email:req.body.email}, (findError, docs) => {
             if (!docs) {
                 logger.warn("Email Id does not exists")
-                res.status(403).json({
+                res.status(201).json({
                     success: false,
                     message: 'Email Id does not exists'
                 })
@@ -146,7 +146,7 @@ async function loginUser(req,res)
                 bcrypt.compare(req.body.password, docs.password, function (err, result) {
                     if(err){
                         logger.warn('Error during Password Comparion')
-                        res.status(403).send({
+                        res.status(201).send({
                             success: false,
                             message: 'Error during Password Comparion'
                         })
@@ -154,7 +154,7 @@ async function loginUser(req,res)
                         jwt.sign({docs}, 'secretkey', (err, token) => {
                             if(err){
                                 logger.warn('Error during Token  Generation')
-                                res.status(403).send({
+                                res.status(201).send({
                                     success: false,
                                     message: 'Error during Token  Genration'
                                 })
@@ -171,13 +171,13 @@ async function loginUser(req,res)
                         });
                      }else if(result==false){
                         logger.warn('Password Mismatch')
-                            res.status(403).json({
+                            res.status(201).json({
                                 success:false,
                                 message: "Password Mismatch",
                             });
                      }else{
                         logger.warn('Invalid Credentials')
-                            res.status(403).json({
+                            res.status(201).json({
                                 success:false,
                                 message: "Invalid Credentials",
                             });
@@ -194,9 +194,61 @@ async function loginUser(req,res)
 }
 
 
+async function updateUser(req,res){
+    const{mobile,address,id}=req.body
+    try{
+        if(typeof mobile == 'undefined' || typeof address == 'undefined' ||  typeof id == 'undefined'){
+            logger.error('Bad Request')
+            res.status(400).send({
+              success: false,
+              message: 'Bad Request'
+            })
+        }else{
+            await User.findOne( {mobile:req.body.mobile}, async function (err,usermobiledocs){
+                if(err){
+                    logger.error(err)
+                    res.status(502).send({
+                        success: false,
+                        message: 'DB Error'
+                    })
+                }else if(usermobiledocs!==null){
+                    logger.error('Mobile Phone already exists')
+                    res.status(201).send({
+                        success: false,
+                        message: 'Mobile Phone already exists'
+                    })
+                }else{
+                    await User.updateOne({_id:id},{ $set: { address: address,mobile:mobile } } ,async (err,docs)=>{
+                        if(err){
+                            logger.error('DB Error')
+                            res.status(502).send({
+                                success: false,
+                                message: 'DB Error'
+                            })
+                        }else{
+                            logger.info('User Details Edited Successfully')
+                            res.status(200).send({
+                                success: true,
+                                message: 'User Details Edited Successfully'
+                            })
+                        }
+                    })
+                }
+            });
+        }
+    }catch(error){
+        logger.error(error)
+        res.status(500).send({
+        success: false,
+        message: error
+    })
+    }
+}
+
 module.exports = {
     addUser,
     getAllUsers,
     getUserById,
     loginUser,
+    updateUser,
 }
