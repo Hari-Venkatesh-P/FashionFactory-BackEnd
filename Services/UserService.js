@@ -2,7 +2,7 @@ const User  = require('../Models/User')
 
 const logger = require('../Library/logger')
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 async function addUser(req,res){
