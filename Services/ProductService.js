@@ -263,12 +263,6 @@ async function getProductById (req, res) {
                     success: false,
                     message: 'DB Error'
                 })
-            }else if(docs===null){
-                logger.warn('No such Product to be deleted')
-                res.status(402).send({
-                    success: false,
-                    message: 'No such Product to be deleted'
-                })
             }else{
                 logger.info('Product deleted successfullyy')
                 res.status(200).send({
